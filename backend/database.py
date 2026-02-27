@@ -4,11 +4,20 @@ from config import Config
 
 def get_db():
     if Config.DATABASE_TYPE == "postgresql":
-        import psycopg2
-        from psycopg2.extras import DictCursor
-        conn = psycopg2.connect(Config.DATABASE_URL, cursor_factory=DictCursor)
-        conn.autocommit = True
-        return conn
+        try:
+            import psycopg2
+            from psycopg2.extras import DictCursor
+            conn = psycopg2.connect(Config.DATABASE_URL, cursor_factory=DictCursor)
+            conn.autocommit = True
+            return conn
+        except ImportError:
+            print("Warning: psycopg2 not installed, falling back to SQLite")
+            Config.DATABASE_TYPE = "sqlite"
+            Config.DATABASE_PATH = os.path.join(os.path.dirname(__file__), "data", "marketing.db")
+            conn = sqlite3.connect(Config.DATABASE_PATH)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            return conn
     else:
         conn = sqlite3.connect(Config.DATABASE_PATH)
         conn.row_factory = sqlite3.Row

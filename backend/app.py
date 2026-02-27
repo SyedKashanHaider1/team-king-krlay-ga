@@ -17,6 +17,9 @@ from routes.chat import chat_bp
 from routes.calendar import calendar_bp
 from routes.auto_reply import auto_reply_bp
 
+# Initialize database on app startup
+init_db()
+
 def create_app():
     app = Flask(__name__, static_folder="../frontend", static_url_path="")
 
@@ -58,10 +61,11 @@ def create_app():
 
     return app
 
+# Create app instance for gunicorn
+app = create_app()
+
 if __name__ == "__main__":
     print("\nInitialising AI Marketing Command Center...")
-    init_db()
-    app = create_app()
     print("All systems ready!")
     print(f"Server running on port {Config.PORT}")
     app.run(host="0.0.0.0", port=Config.PORT, debug=Config.DEBUG)
