@@ -3,12 +3,25 @@ import os
 from config import Config
 
 def get_db():
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    if Config.DATABASE_TYPE == "postgresql":
+        import psycopg2
+        from psycopg2.extras import DictCursor
+        conn = psycopg2.connect(Config.DATABASE_URL, cursor_factory=DictCursor)
+        conn.autocommit = True
+        return conn
+    else:
+        conn = sqlite3.connect(Config.DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
 
 def init_db():
+    if Config.DATABASE_TYPE == "postgresql":
+        init_postgres_db()
+    else:
+        init_sqlite_db()
+
+def init_sqlite_db():
     os.makedirs(os.path.dirname(Config.DATABASE_PATH), exist_ok=True)
     conn = get_db()
     cursor = conn.cursor()
@@ -196,3 +209,119 @@ def init_db():
     conn.commit()
     conn.close()
     print("Database initialized successfully")
+
+def init_postgres_db():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Create tables with PostgreSQL syntax
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            google_id TEXT UNIQUE,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            avatar TEXT,
+            password_hash TEXT,
+            salt TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash TEXT NOT NULL UNIQUE,
+            expires_at TIMESTAMP NOT NULL,
+            revoked_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS campaigns (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            description TEXT,
+            goal TEXT,
+            budget REAL DEFAULT 0,
+            target_audience TEXT,
+            channels TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'draft',
+            start_date TEXT,
+            end_date TEXT,
+            strategy TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS content_items (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            content TEXT,
+            type TEXT DEFAULT 'blog',
+            status TEXT DEFAULT 'draft',
+            seo_keywords TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            description TEXT,
+            date TEXT NOT NULL,
+            time TEXT,
+            type TEXT DEFAULT 'campaign',
+            campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS auto_reply_rules (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            keyword TEXT NOT NULL,
+            response TEXT NOT NULL,
+            platforms TEXT DEFAULT '[]',
+            is_active BOOLEAN DEFAULT true,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS faqs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            message TEXT NOT NULL,
+            response TEXT NOT NULL,
+            session_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    print("PostgreSQL database initialized successfully")

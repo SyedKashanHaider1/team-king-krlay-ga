@@ -63,5 +63,6 @@ if __name__ == "__main__":
     init_db()
     app = create_app()
     print("All systems ready!")
-    print("Open http://localhost:5000 in your browser\n")
-    app.run(host="0.0.0.0", port=5000, debug=Config.DEBUG)
+    print(f"Server running on port {Config.PORT}")
+    app.run(host="0.0.0.0", port=Config.PORT, debug=Config.DEBUG)
+
