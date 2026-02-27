@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Marketing Command Center</title>
+  <meta name="description" content="AI-powered marketing platform for planning, generating, publishing and analysing campaigns">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Google Identity Services -->
+  <!-- Removed for email/password auth -->
+
+  <script>
+    // ── Configuration ──
+    // API base URL (auto-detected)
+    window.API_BASE = window.location.hostname === "localhost"
+      ? "http://localhost:5000/api"
+      : window.location.origin + "/api";
+  </script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN PAGE
+══════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-bg">
+    <div class="login-bg-circle"></div>
+  </div>
+
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="login-logo-icon">🤖</div>
+      <div class="login-logo-text">
+        AI Marketing Command Center
+        <span>Your intelligent marketing brain</span>
+      </div>
+    </div>
+
+    <h1 class="login-title gradient-text">Command Your Marketing</h1>
+    <p class="login-subtitle">Plan, generate, publish, and optimise campaigns with AI intelligence</p>
+
+    <!-- Feature highlights -->
+    <div class="login-features">
+      <div class="login-feature"><span class="login-feature-icon">🎯</span> AI-generated campaign strategies</div>
+      <div class="login-feature"><span class="login-feature-icon">✍️</span> Multi-channel content generation</div>
+      <div class="login-feature"><span class="login-feature-icon">📊</span> Real-time analytics & insights</div>
+      <div class="login-feature"><span class="login-feature-icon">🤖</span> Automated AI correspondence</div>
+    </div>
+
+    <!-- Login/Signup Forms -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="login-tab" onclick="Auth.showLogin()">Login</button>
+      <button class="auth-tab" id="signup-tab" onclick="Auth.showSignup()">Sign Up</button>
+    </div>
+
+    <div id="login-form" class="auth-form">
+      <form onsubmit="Auth.login(event)">
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" required placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-auth" id="login-btn">Login</button>
+      </form>
+      <div class="auth-switch">
+        Don’t have an account?
+        <button type="button" onclick="Auth.showSignup()">Create one</button>
+      </div>
+    </div>
+
+    <div id="signup-form" class="auth-form hidden">
+      <form onsubmit="Auth.signup(event)">
+        <div class="form-group">
+          <label for="signup-name">Name</label>
+          <input type="text" id="signup-name" required placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Email</label>
+          <input type="email" id="signup-email" required placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn-auth" id="signup-btn">Sign Up</button>
+      </form>
+      <div class="auth-switch">
+        Already have an account?
+        <button type="button" onclick="Auth.showLogin()">Login</button>
+      </div>
+    </div>
+
+    <div class="login-footer">
+      By continuing, you agree to our Terms of Service and Privacy Policy.<br>
+      <span style="color:var(--text-purple);margin-top:6px;display:block">Your data is isolated per account. 100% secure. 🔒</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════ -->
+<div id="app-page">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay"></div>
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">🤖</div>
+        <div class="sidebar-logo-text">
+          Marketing AI
+          <span>Command Center</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">✕</button>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- Built dynamically by app.js -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="Auth.logout()">
+        <div class="user-avatar" id="sidebar-user-avatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-user-name">Loading...</div>
+          <div class="user-email" id="sidebar-user-email"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <div class="main-content">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="mobile-toggle-btn" id="mobile-sidebar-btn">☰</button>
+      <div class="flex flex-col" style="flex:1;min-width:0">
+        <span class="topbar-title" id="topbar-title">Dashboard</span>
+      </div>
+
+      <div class="topbar-search">
+        <span class="topbar-search-icon">🔍</span>
+        <input type="text" placeholder="Search campaigns, content..." id="global-search">
+      </div>
+
+      <div class="topbar-actions">
+        <button class="topbar-btn" onclick="AppRouter.navigate('chat')" data-tooltip="AI Strategist">
+          🤖
+          <span class="badge">AI</span>
+        </button>
+        <button class="topbar-btn" onclick="AppRouter.navigate('analytics')" data-tooltip="Analytics">📊</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Logout">🚪</button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content">
+
+      <div class="page" id="page-dashboard"></div>
+      <div class="page" id="page-campaigns"></div>
+      <div class="page" id="page-content"></div>
+      <div class="page" id="page-calendar"></div>
+      <div class="page" id="page-publishing"></div>
+      <div class="page" id="page-analytics"></div>
+      <div class="page" id="page-chat"></div>
+      <div class="page" id="page-auto-reply"></div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── Global overlays ── -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+</div>
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ── Scripts ── -->
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/campaigns.js"></script>
+<script src="js/content.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/auto-reply.js"></script>
+
+<script>
+  // ── Bootstrap ──
+  document.addEventListener("DOMContentLoaded", () => {
+    Toast.init();
+    Loader.init();
+
+    // Global search (navigate to relevant section)
+    const searchInput = document.getElementById("global-search");
+    if (searchInput) {
+      searchInput.addEventListener("keydown", debounce((e) => {
+        if (e.key === "Enter") {
+          const q = e.target.value.toLowerCase();
+          if (q.includes("campaign")) AppRouter.navigate("campaigns");
+          else if (q.includes("content") || q.includes("post")) AppRouter.navigate("content");
+          else if (q.includes("analytics") || q.includes("metric")) AppRouter.navigate("analytics");
+          else if (q.includes("calendar") || q.includes("schedule")) AppRouter.navigate("calendar");
+          else if (q.includes("chat") || q.includes("ai")) AppRouter.navigate("chat");
+          else if (q.includes("reply") || q.includes("faq")) AppRouter.navigate("auto-reply");
+          e.target.value = "";
+        }
+      }, 300));
+    }
+
+    // Init Auth (handles session restoration)
+    Auth.init();
+  });
+</script>
+</body>
+</html>
